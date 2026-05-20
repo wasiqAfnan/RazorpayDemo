@@ -112,3 +112,71 @@ export const verifyPaymentController = async (req, res) => {
     });
   }
 };
+
+export const razorpayWebhookController = async (req, res) => {
+  try {
+    // Get Razorpay Signature from headers
+    const razorpaySignature = req.headers["x-razorpay-signature"];
+
+    // Generate Expected Signature
+    const generatedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET)
+      .update(req.body)
+      .digest("hex");
+
+    // Verify Webhook Signature
+    const isAuthentic = generatedSignature === razorpaySignature;
+
+    // Handle Invalid Signature
+    if (!isAuthentic) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid webhook signature",
+      });
+    }
+
+    // Convert Raw Buffer to JSON
+    const payload = JSON.parse(req.body.toString());
+
+    console.log("Webhook Event:", payload.event);
+
+    // Handle Events
+    switch (payload.event) {
+      // Payment Captured
+      case "payment.captured": {
+        console.log("Payment Captured Successfully");
+
+        // TODO: Store successful payment in DB
+
+        // Example Fields Available
+        console.log("Payment ID: ", payload.payload.payment.entity.id);
+        console.log("Payment Amount: ", payload.payload.payment.entity.amount);
+
+        break;
+      }
+
+      // Payment Failed
+      case "payment.failed": {
+        console.log("Payment Failed");
+        break;
+      }
+
+      default:
+        console.log("Unhandled Event");
+    }
+
+    // Success Response
+    return res.status(200).json({
+      success: true,
+      message: "Webhook received successfully",
+    });
+  } catch (error) {
+    console.error("Webhook Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Webhook processing failed",
+      error: error.message,
+    });
+  }
+};

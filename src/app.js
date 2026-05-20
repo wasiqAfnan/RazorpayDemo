@@ -13,12 +13,14 @@ const app = express();
  * BUT:
  * Razorpay webhook route will later require express.raw()
  * because webhook signature verification depends on raw body.
- *
+ * Express.raw should be used before express.json() in order to handle
+ * raw body before parsing it to json
  */
-
+ 
+app.use( "/api/v1/payments/webhook", express.raw({ type: "application/json" }) );
 
 app.use(express.json());
-app.use(express.static("public"));
+app.use(express.static("public")); // Serve static files under public folder
 
 
 // Health Check Route

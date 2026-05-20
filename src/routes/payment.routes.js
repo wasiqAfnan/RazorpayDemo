@@ -12,4 +12,10 @@ router.post("/create-order", createOrderController);
 // Verify Payment Signature
 router.post("/verify-payment", verifyPaymentController);
 
+// Razorpay Webhook
+router.post(
+  "/webhook",
+  razorpayWebhookController,
+);
+
 export default router;
