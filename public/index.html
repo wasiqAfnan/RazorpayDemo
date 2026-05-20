@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Razorpay Payment Demo</title>
+
+    <!-- Razorpay Checkout Script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 40px;
+      }
+
+      button {
+        padding: 12px 20px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+
+      pre {
+        margin-top: 20px;
+        background: #f4f4f4;
+        padding: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Razorpay Payment Demo</h1>
+
+    <button id="payBtn">Pay ₹500</button>
+
+    <pre id="responseBox"></pre>
+
+    <script>
+      const payBtn = document.getElementById("payBtn");
+      const responseBox = document.getElementById("responseBox");
+
+      payBtn.addEventListener("click", async () => {
+        try {
+          // Step 1 - Create Order From Backend
+          const response = await fetch("/api/v1/payments/create-order", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              amount: 500,
+            }),
+          });
+
+          const data = await response.json();
+
+          console.log("Order Response:", data);
+
+          // Step 2 - Configure Razorpay Checkout
+          const options = {
+            key: "rzp_test_SCUO1oICePKOkW",
+            amount: data.data.amount,
+            currency: data.data.currency,
+            name: "Payment Demo",
+            description: "Testing Razorpay Integration",
+            order_id: data.data.orderId,
+            method: { 
+                upi: true, 
+                card: true, 
+                netbanking: true, 
+                wallet: true 
+            },
+            handler: async function (response) {
+              // payment success response
+              console.log("Payment Success:", response);
+
+              responseBox.innerText = `Payment successful\nPayment ID: ${response.razorpay_payment_id}`;
+
+              // send the response to backend for signature verification
+              // const verifyResponse = await fetch(
+              //   "/api/v1/payments/verify-payment",
+              //   {
+              //     method: "POST",
+              //     headers: { "Content-Type": "application/json" },
+              //     body: JSON.stringify(response),
+              //   },
+              // );
+              // const verifyData = await verifyResponse.json();
+
+              // // Display Verification Response
+              // console.log("Verification Response:", verifyData);
+              // responseBox.innerText = JSON.stringify(verifyData, null, 2);
+            },
+
+            theme: {
+              color: "#3399cc",
+            },
+          };
+
+          // Step 3 - Open Razorpay Checkout
+          const razorpay = new Razorpay(options);
+
+          razorpay.open();
+        } catch (error) {
+          console.error(error);
+
+          responseBox.innerText = error.message;
+        }
+      });
+    </script>
+  </body>
+</html>
